@@ -1,0 +1,8 @@
+{
+  "name": "Beer Route Planner",
+  "description": "Let us help you navigate between breweries. Simply enter your start and finish points and export straight to your phone navigation. ",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "prompt": ""
+}
