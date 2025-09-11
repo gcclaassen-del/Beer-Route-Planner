@@ -62,16 +62,10 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="h-screen w-screen bg-gray-100 flex flex-col font-sans">
-      <header className="bg-white shadow-md z-10">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold leading-tight text-gray-900 text-center">
-                Beer Route Planner
-            </h1>
-        </div>
-      </header>
-      <main className="flex-1 flex flex-col md:flex-row overflow-hidden relative">
+    <div className="w-full min-h-screen md:h-screen bg-gray-100 flex flex-col font-sans md:overflow-hidden">
+      <main className="flex-1 flex flex-col md:flex-row relative md:overflow-hidden">
         <ControlsPanel
+          className="order-2 md:order-1 md:h-full"
           startPoint={startPoint}
           setStartPoint={setStartPoint}
           endPoint={endPoint}
@@ -82,6 +76,7 @@ const App: React.FC = () => {
           toggleBrewerySelection={toggleBrewerySelection}
         />
         <MapDisplay
+          className="order-1 md:order-2 h-[60vh] md:h-full"
           visibleBreweries={breweries}
           selectedBreweries={selectedBreweries}
           startPoint={startPoint}
