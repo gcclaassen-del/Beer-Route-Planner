@@ -1,6 +1,7 @@
+// v1.1 Force Rebuild
 import React from 'react';
 import { Brewery, LocationPoint } from '../types';
-import { StartRouteIcon, WhatsAppIcon, EmailIcon, BusIcon } from './Icons';
+import { StartRouteIcon, PhoneIcon, EmailIcon, BusIcon } from './Icons';
 
 interface ActionButtonsProps {
   startPoint: LocationPoint;
@@ -21,7 +22,10 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
     if (!startPoint.coords) return null;
 
     const destination = useDifferentEndPoint ? endPoint : startPoint;
-    if (!destination.coords) return null;
+    if (selectedBreweries.length > 0 && !destination.coords) return null;
+    // If no breweries, we still need a destination
+    if (selectedBreweries.length === 0 && !destination.coords) return null;
+
 
     const originParam = startPoint.coords.join(',');
     const destinationParam = destination.coords.join(',');
@@ -62,20 +66,22 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
   };
 
   return (
-    <div className="w-full bg-white p-4 border-t border-gray-200 shadow-up">
-      <div className="max-w-4xl mx-auto flex justify-center items-center flex-wrap gap-2 sm:gap-4">
+    <div className="w-full bg-white p-3 border-t border-gray-200 shadow-up">
+      <div className="max-w-4xl mx-auto flex flex-wrap justify-center items-center gap-3">
         <button
           onClick={handleStart}
           disabled={!isActionable}
-          className="flex-1 sm:flex-initial sm:w-32 inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          title={!isActionable ? "Add a start point & breweries to enable" : "Open route in Google Maps"}
+          className="flex-initial inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           <StartRouteIcon className="w-5 h-5 mr-2"/>
-          Start
+          Start Route
         </button>
         <button
           onClick={onBookTransport}
           disabled={!isBookable}
-          className="flex-1 sm:flex-initial sm:w-44 inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-amber-600 hover:bg-amber-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          title={!isBookable ? "Add a start point & breweries to book transport" : "Get a quote for transport"}
+          className="flex-initial inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-amber-600 hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           <BusIcon className="w-5 h-5 mr-2"/>
           Book Transport
@@ -83,15 +89,17 @@ const ActionButtons: React.FC<ActionButtonsProps> = ({
         <button
           onClick={() => handleShare('whatsapp')}
           disabled={!isActionable}
-          className="flex-1 sm:flex-initial sm:w-40 inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          title={!isActionable ? "Plan a route to share it" : "Share route via WhatsApp"}
+          className="flex-initial inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-green-500 hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
-          <WhatsAppIcon className="w-5 h-5 mr-2"/>
-          WhatsApp
+          <PhoneIcon className="w-5 h-5 mr-2"/>
+          Share
         </button>
         <button
           onClick={() => handleShare('email')}
           disabled={!isActionable}
-          className="flex-1 sm:flex-initial sm:w-32 inline-flex items-center justify-center px-4 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gray-700 hover:bg-gray-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+          title={!isActionable ? "Plan a route to share it" : "Share route via Email"}
+          className="flex-initial inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg shadow-sm text-white bg-gray-700 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
         >
           <EmailIcon className="w-5 h-5 mr-2"/>
           Email
