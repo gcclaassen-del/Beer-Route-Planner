@@ -1,3 +1,4 @@
+// v1.1 Force Rebuild
 import React, { useState, useMemo, useEffect } from 'react';
 import ControlsPanel from './components/ControlsPanel';
 import MapDisplay from './components/MapDisplay';
@@ -7,9 +8,6 @@ import { fetchBreweries } from './services/map-data-service';
 import BookingFormModal from './components/BookingFormModal';
 
 const App: React.FC = () => {
-  // This is the new line to force a build change
-  console.log('App component rendered with latest changes');
-
   const [breweries, setBreweries] = useState<Brewery[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
