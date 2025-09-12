@@ -1,76 +1,88 @@
 import esbuild from 'esbuild';
-import { copyFile, mkdir, writeFile, readFile } from 'fs/promises';
-import { existsSync } from 'fs';
+import { rm, readFile, writeFile } from 'fs/promises';
 import path from 'path';
 
 const outdir = 'dist';
+const sourceHtml = 'index.html';
 
-try {
-  console.log('Starting production build process with cache busting...');
+async function build() {
+  try {
+    console.log('Starting production build...');
 
-  // Ensure the output directory exists
-  if (!existsSync(outdir)) {
-    await mkdir(outdir);
-    console.log(`Created output directory: ${outdir}`);
+    // 1. Clean the output directory for a fresh build
+    await rm(outdir, { recursive: true, force: true });
+    console.log(`Cleaned output directory: ${outdir}`);
+
+    // 2. Run esbuild to bundle all JS/CSS and create a metafile
+    const result = await esbuild.build({
+      entryPoints: ['index.tsx'],
+      bundle: true,
+      minify: true,
+      format: 'esm',
+      sourcemap: true,
+      outdir: outdir,
+      entryNames: 'assets/[name]-[hash]',
+      chunkNames: 'assets/[name]-[hash]',
+      assetNames: 'assets/[name]-[hash]',
+      tsconfig: 'tsconfig.json',
+      metafile: true,
+      define: {
+        'process.env.NODE_ENV': '"production"',
+      },
+    });
+    console.log('esbuild bundling complete.');
+
+    // 3. Process the metafile to find the exact paths of the generated files
+    const outputs = result.metafile.outputs;
+    let jsPath = '';
+    let cssPath = '';
+
+    for (const file in outputs) {
+      if (file.endsWith('.js')) {
+        jsPath = file;
+      } else if (file.endsWith('.css')) {
+        cssPath = file;
+      }
+    }
+
+    if (!jsPath) {
+      throw new Error('Build failed: Could not find output JS file in metafile.');
+    }
+    console.log(`Found JS bundle: ${jsPath}`);
+    if (cssPath) {
+      console.log(`Found CSS bundle: ${cssPath}`);
+    }
+
+    // 4. Read the source index.html
+    let htmlContent = await readFile(sourceHtml, 'utf-8');
+
+    // 5. Generate the final <link> and <script> tags with correct relative paths
+    //    Using .replace(/\\/g, '/') ensures paths are valid URLs on Windows
+    const relativeCssPath = cssPath ? path.relative(outdir, cssPath).replace(/\\/g, '/') : '';
+    const relativeJsPath = path.relative(outdir, jsPath).replace(/\\/g, '/');
+
+    const cssTag = cssPath ? `<link rel="stylesheet" href="./${relativeCssPath}">` : '';
+    const jsTag = `<script type="module" defer src="./${relativeJsPath}"></script>`;
+    
+    // 6. Remove the conflicting importmap script from the HTML content for production
+    htmlContent = htmlContent.replace(/<script type="importmap">[\s\S]*?<\/script>/g, '');
+    console.log('Removed development importmap from HTML.');
+
+    // 7. Inject the new, correct asset tags into the HTML placeholders
+    htmlContent = htmlContent.replace('<!-- INJECT_STYLES -->', cssTag);
+    htmlContent = htmlContent.replace('<!-- INJECT_SCRIPTS -->', jsTag);
+    console.log('Injected production asset tags into HTML.');
+
+    // 8. Write the final, production-ready index.html to the output directory
+    await writeFile(path.join(outdir, 'index.html'), htmlContent);
+    console.log(`Wrote final index.html to ${outdir}`);
+
+    console.log('Build successful! Your app is ready in the "dist" folder.');
+
+  } catch (e) {
+    console.error('Build failed:', e);
+    process.exit(1);
   }
-
-  // Bundle the application with a hashed filename.
-  // We use write: false to get the file content in memory.
-  const result = await esbuild.build({
-    entryPoints: ['index.tsx'],
-    bundle: true,
-    minify: true,
-    format: 'esm',
-    sourcemap: true,
-    entryNames: '[name]-[hash]', // This creates the unique filename e.g., main-A1B2C3D4.js
-    outdir: outdir,
-    tsconfig: 'tsconfig.json',
-    write: false, // We will write the files manually after updating index.html
-    define: {
-      'process.env.NODE_ENV': '"production"',
-    },
-  });
-
-  if (result.outputFiles.length === 0) {
-    throw new Error('esbuild did not produce any output files.');
-  }
-
-  // Find the generated JS file (and its map if it exists)
-  const jsFile = result.outputFiles.find(file => file.path.endsWith('.js'));
-  const cssFile = result.outputFiles.find(file => file.path.endsWith('.css')); // In case CSS is extracted
-
-  if (!jsFile) {
-    throw new Error('Could not find the generated JavaScript file in the build output.');
-  }
-
-  const jsFileName = path.basename(jsFile.path);
-  
-  console.log(`JavaScript bundled successfully: ${jsFileName}`);
-  
-  // Write the main JS file to the dist folder
-  await writeFile(jsFile.path, jsFile.contents);
-
-  // Read the source index.html
-  let htmlContent = await readFile('index.html', 'utf-8');
-
-  // CRITICAL FIX 1: Remove the development-only importmap
-  htmlContent = htmlContent.replace(/<script type="importmap">[\s\S]*?<\/script>/, '');
-  console.log('Removed development importmap from index.html.');
-
-  // CRITICAL FIX 2: Replace the placeholder script with the new cache-busted filename
-  htmlContent = htmlContent.replace(
-    /<script type="module" defer src=".\/main.js"><\/script>/,
-    `<script type="module" defer src="./${jsFileName}"></script>`
-  );
-  console.log('Updated index.html to point to the new cache-busted script.');
-
-  // Write the updated index.html to the dist folder
-  await writeFile(path.join(outdir, 'index.html'), htmlContent);
-  console.log('index.html processed and copied to dist.');
-  
-  console.log('Build successful! Your app is ready in the "dist" folder with cache busting enabled.');
-
-} catch (e) {
-  console.error('Build failed:', e);
-  process.exit(1);
 }
+
+build();
