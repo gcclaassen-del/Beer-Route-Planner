@@ -13,14 +13,15 @@ try {
     console.log(`Created output directory: ${outdir}`);
   }
 
-  // Bundle the React application
+  // Bundle the React application using tsconfig.json
   await esbuild.build({
-    entryPoints: ['index.tsx'], // Using index.tsx as the entry point
+    entryPoints: ['index.tsx'],
     bundle: true,
     outfile: `${outdir}/main.js`,
     minify: true,
     sourcemap: true,
-    target: ['es2020', 'chrome58', 'firefox57', 'safari11', 'edge16'],
+    // This line is the crucial fix: it tells esbuild to use your tsconfig file.
+    tsconfig: 'tsconfig.json',
     define: {
       'process.env.NODE_ENV': '"production"',
     },
