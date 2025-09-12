@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// v1.2 Definitive Map Fix
+import React, { useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Polyline, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import { Brewery, LocationPoint } from '../types';
@@ -47,18 +48,27 @@ interface MapDisplayProps {
   endPoint: LocationPoint;
   useDifferentEndPoint: boolean;
   toggleBrewerySelection: (brewery: Brewery) => void;
+  className?: string;
 }
+
+// This component ensures the map renders correctly after its container is sized, fixing the grey map bug.
+const MapResize = () => {
+    const map = useMap();
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, [map]);
+    return null;
+};
 
 const RecenterAutomatically:React.FC<{points: L.LatLngTuple[], center: L.LatLngTuple, zoom: number}> = ({ points, center, zoom }) => {
   const map = useMap();
   useEffect(() => {
     if (points.length > 0) {
       const bounds = L.latLngBounds(points);
-      // Only fit the bounds if the current map view is outside of the points' bounds.
-      // This prevents the map from zooming out when a user has zoomed in and interacts with a pin.
-      if (!bounds.contains(map.getBounds())) {
-        map.fitBounds(bounds, { padding: [50, 50] });
-      }
+      map.fitBounds(bounds, { padding: [50, 50] });
     } else {
       map.setView(center, zoom);
     }
@@ -66,8 +76,7 @@ const RecenterAutomatically:React.FC<{points: L.LatLngTuple[], center: L.LatLngT
   return null;
 }
 
-const MapDisplay: React.FC<MapDisplayProps> = ({ visibleBreweries, selectedBreweries, startPoint, endPoint, useDifferentEndPoint, toggleBrewerySelection }) => {
-  const [showOverlapNote, setShowOverlapNote] = useState(true);
+const MapDisplay: React.FC<MapDisplayProps> = ({ visibleBreweries, selectedBreweries, startPoint, endPoint, useDifferentEndPoint, toggleBrewerySelection, className }) => {
   const center: L.LatLngTuple = [-28.94, 24.55];
   const zoom = 6;
 
@@ -85,28 +94,19 @@ const MapDisplay: React.FC<MapDisplayProps> = ({ visibleBreweries, selectedBrewe
   }, [startPoint, endPoint, selectedBreweries, useDifferentEndPoint]);
 
   const mapBoundsPoints = useMemo(() => {
-      const points: L.LatLngTuple[] = [...visibleBreweries.map(b => b.coords)];
-      if(startPoint.coords) points.push(startPoint.coords);
-      if(useDifferentEndPoint && endPoint.coords) points.push(endPoint.coords);
-      return points;
-  }, [visibleBreweries, startPoint, endPoint, useDifferentEndPoint]);
+      const points: L.LatLngTuple[] = [...visibleBreweries.map(b => b.coords), ...routePoints];
+      return points.filter(p => p); // Filter out any null coordinates
+  }, [visibleBreweries, routePoints]);
 
 
   return (
-    <div className="w-full md:w-2/3 h-full relative">
-      {showOverlapNote && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[1000] bg-white bg-opacity-90 p-3 rounded-lg shadow-lg flex items-center space-x-4 max-w-sm">
-            <p className="text-sm text-gray-700">
-                <strong>Heads up!</strong> Some breweries are close together. Zoom in on the map to see individual pins.
-            </p>
-            <button onClick={() => setShowOverlapNote(false)} className="text-gray-500 hover:text-gray-800 text-2xl leading-none font-bold" aria-label="Close notification">&times;</button>
-        </div>
-      )}
+    <div className={`w-full md:w-2/3 relative ${className || ''}`}>
       <MapContainer center={center} zoom={zoom} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapResize />
         {visibleBreweries.map((brewery) => {
           const isSelected = selectedBreweries.some(b => b.id === brewery.id);
           return (
