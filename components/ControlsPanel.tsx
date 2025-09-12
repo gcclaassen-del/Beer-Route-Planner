@@ -11,6 +11,7 @@ interface ControlsPanelProps {
   setUseDifferentEndPoint: React.Dispatch<React.SetStateAction<boolean>>;
   selectedBreweries: Brewery[];
   toggleBrewerySelection: (brewery: Brewery) => void;
+  className?: string;
 }
 
 type NominatimSuggestion = {
@@ -29,6 +30,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({
   setUseDifferentEndPoint,
   selectedBreweries,
   toggleBrewerySelection,
+  className,
 }) => {
   const [isLocating, setIsLocating] = useState(false);
 
@@ -139,7 +141,7 @@ const ControlsPanel: React.FC<ControlsPanelProps> = ({
   }
 
   return (
-    <div className="w-full md:w-1/3 h-full bg-gray-50 p-4 overflow-y-auto flex flex-col space-y-6">
+    <div className={`w-full md:w-1/3 bg-gray-50 p-4 overflow-y-auto flex flex-col space-y-6 ${className || ''}`}>
       <div className="p-4 border border-gray-200 rounded-lg bg-white shadow-sm">
         <h2 className="text-xl font-bold text-gray-800 mb-4">Plan Your Route</h2>
         
