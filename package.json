@@ -1,12 +1,12 @@
-
 {
   "name": "beer-route-planner",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.2",
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "dev": "echo \"Development server not configured. Use a simple static server like 'npx serve' for index.html\""
+    "start": "serve dist",
+    "dev": "npm run build && npm run start"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
@@ -18,6 +18,7 @@
     "@types/leaflet": "^1.9.12",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
-    "esbuild": "^0.23.0"
+    "esbuild": "^0.23.0",
+    "serve": "^14.2.3"
   }
 }
